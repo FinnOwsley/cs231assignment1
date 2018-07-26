@@ -59,7 +59,6 @@ def svm_loss_naive(W, X, y, reg):
 
   return loss, dW
 
-
 def svm_loss_vectorized(W, X, y, reg):
   """
   Structured SVM loss function, vectorized implementation.
@@ -73,6 +72,8 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
+  print(type(X))
+  print(type(W))
   scores = np.dot(X, W)
   correct_class_scores = scores[np.arange(scores.shape[0]), y][:, np.newaxis]
   loss = np.sum(np.maximum(0, scores-correct_class_scores+1)) / X.shape[0] + reg * np.sum(W * W)
@@ -90,13 +91,14 @@ def svm_loss_vectorized(W, X, y, reg):
   # loss.                                                                     #
   #############################################################################
   passed = np.maximum(0, scores - correct_class_scores + 1)
+  passed[np.arange(X.shape[0]), y] = 0
   passed[passed!=0] = 1
+  passedSum = np.sum(passed, axis = 1)
+  passed[np.arange(X.shape[0]), y] = -passedSum
   dW += np.dot(X.transpose(), passed)
-  passed = np.sum(passed, axis = 1)
-  print(passed.shape)
-  #a = np.sum(np.dot(X.transpose(), passed), axis = 1) 
-  dW[:, y] -= X.transpose()*passed
   dW /= X.shape[0]
+  dW += reg * W
+    
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
