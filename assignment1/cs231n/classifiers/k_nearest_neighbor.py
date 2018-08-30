@@ -125,7 +125,6 @@ class KNearestNeighbor(object):
     trainSquares = np.sum(np.square(self.X_train), axis = 1)
     prod = -2*np.dot(X, self.X_train.transpose())
     dists = np.sqrt(testSquares[:, np.newaxis] + trainSquares + prod)
-    
     #########################################################################
     #                         END OF YOUR CODE                              #
     #########################################################################

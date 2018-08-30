@@ -86,7 +86,7 @@ class TwoLayerNet(object):
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
-
+        
         # If y is None then we are in test mode so just return scores
         if y is None:
             return scores
@@ -179,6 +179,8 @@ class FullyConnectedNet(object):
         for i in range(len(layers) - 1):
             self.params["W"+str(i)] = np.random.normal(scale = weight_scale, size = [layers[i], layers[i+1]])
             self.params["b"+str(i)] = np.zeros(layers[i+1])
+            self.params["gamma"+str(i)] = np.ones(layers[i+1])
+            self.params["beta"+str(i)] = np.zeros(layers[i+1])
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -239,12 +241,17 @@ class FullyConnectedNet(object):
         ############################################################################
         full_caches = []
         relu_caches = []
+        batch_caches = []
+        output = X
         for i in range(self.num_layers):
             full_caches += [0]
-            output, full_caches[-1] = affine_forward(X, self.params["W"+str(i)], self.params["b"+str(i)]) 
+            output, full_caches[-1] = affine_forward(output, self.params["W"+str(i)], self.params["b"+str(i)]) 
             if i < self.num_layers - 1:
+                batch_caches += [0]
+                output, batch_caches[-1] = batchnorm_forward(output, self.params["gamma"+str(i)], self.params["beta"+str(i)], self.bn_params[i])
                 relu_caches += [0]
                 output, relu_caches[-1] = relu_forward(output)
+        scores = output
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -260,8 +267,8 @@ class FullyConnectedNet(object):
         # data loss using softmax, and make sure that grads[k] holds the gradients #
         # for self.params[k]. Don't forget to add L2 regularization!               #
         #                                                                          #
-        # When using batch/layer normalization, you don't need to regularize the scale   #
-        # and shift parameters.                                                    #
+        # When using batch/layer normalization, you don't need to regularize the   #
+        # scale and shift parameters.                                              #
         #                                                                          #
         # NOTE: To ensure that your implementation matches ours and you pass the   #
         # automated tests, make sure that your L2 regularization includes a factor #
@@ -271,7 +278,8 @@ class FullyConnectedNet(object):
         for i in reversed(range(self.num_layers)):
             backflow_grads, grads["W"+str(i)], grads["b"+str(i)] = affine_backward(backflow_grads, full_caches[i])
             if i > 0:
-                backflow_grads = relu_backward(backflow_grads, relu_caches[i])
+                backflow_grads, grads["gamma"+str(i-1)], grads["beta"+str(i-1)] = batchnorm_backward(backflow_grads, batch_caches[i-1])
+                backflow_grads = relu_backward(backflow_grads, relu_caches[i-1])
         for i in range(self.num_layers): 
             loss += .5*self.reg*(np.sum(self.params["W"+str(i)]**2))
             grads["W"+str(i)] += self.reg*self.params["W"+str(i)]
